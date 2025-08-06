@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Admin - All Timesheets{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">All Timesheets</h2>
+
+  {% if timesheets %}
+    <table class="table table-bordered table-striped table-hover">
+      <thead class="table-primary">
+        <tr>
+          <th>ID</th>
+          <th>Employee</th>
+          <th>Date</th>
+          <th>Project</th>
+          <th>Description</th>
+          <th>Hours</th>
+          <th>Status</th>
+          <th>Manager Comment</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ts in timesheets %}
+          <tr>
+            <td>{{ ts.id }}</td>
+            <td>{{ ts.user.username }}</td>
+            <td>{{ ts.date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ ts.project }}</td>
+            <td>{{ ts.description }}</td>
+            <td>{{ '%.2f'|format(ts.hours) }}</td>
+            <td>
+              {% if ts.status == 'draft' %}
+                <span class="badge bg-secondary">Draft</span>
+              {% elif ts.status == 'submitted' %}
+                <span class="badge bg-warning text-dark">Submitted</span>
+              {% elif ts.status == 'approved' %}
+                <span class="badge bg-success">Approved</span>
+              {% elif ts.status == 'rejected' %}
+                <span class="badge bg-danger">Rejected</span>
+              {% endif %}
+            </td>
+            <td>{{ ts.manager_comment or '-' }}</td>
+            <td>
+              <a href="{{ url_for('admin.edit_timesheet', ts_id=ts.id) }}" class="btn btn-sm btn-primary">Edit</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No timesheets found.</p>
+  {% endif %}
+</div>
+{% endblock %}

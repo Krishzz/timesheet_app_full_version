@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}My Timesheets{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>My Weekly Timesheets</h2>
+  <a href="{{ url_for('employee.new_timesheet') }}" class="btn btn-success mb-3">Create New Timesheet</a>
+  {% if timesheets %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Week Start (Monday)</th>
+        <th>Status</th>
+        <th>Submitted At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ts in timesheets %}
+      <tr>
+        <td>{{ ts.week_start.strftime('%Y-%m-%d') }}</td>
+        <td>{{ ts.status.capitalize() }}</td>
+        <td>{{ ts.submitted_at.strftime('%Y-%m-%d %H:%M') if ts.submitted_at else '-' }}</td>
+        <td>
+          {% if ts.status == 'draft' or ts.status == 'rejected' %}
+          <a href="{{ url_for('employee.edit_timesheet', ts_id=ts.id) }}" class="btn btn-primary btn-sm">Edit</a>
+          {% else %}
+          <span class="text-muted">Locked</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No timesheets found.</p>
+  {% endif %}
+</div>
+{% endblock %}

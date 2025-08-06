@@ -1,0 +1,125 @@
+/* Fonts and base */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #004085; /* Dew's primary dark blue */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 1030;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar .nav-link {
+    color: #cce5ff;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus {
+    background-color: #003366;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Main content */
+#content {
+    margin-left: 220px;
+    padding: 2rem 2rem 4rem;
+    min-height: 100vh;
+    background-color: #fefefe;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #004085;
+    border-color: #003366;
+    box-shadow: none;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.25rem;
+}
+
+/* Table */
+.table-primary {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #e9f2ff;
+}
+
+/* Modal overrides */
+.modal-header {
+    background-color: #004085;
+    color: white;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Form labels */
+.form-label {
+    font-weight: 600;
+}
+
+/* Scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #004085;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: #002752;
+    border-radius: 3px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    #content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
