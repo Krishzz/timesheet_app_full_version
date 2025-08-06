@@ -54,12 +54,3 @@ def get_week_start_end(date=None):
     end = start + datetime.timedelta(days=6)                # Sunday
     return start, end
 
-def send_email(subject, recipient, body):
-    """
-    Placeholder function for sending emails.
-    You can integrate Flask-Mail or any email service here.
-    For now, it just prints email contents to console for testing.
-    """
-    print(f"Sending email to: {recipient}")
-    print(f"Subject: {subject}")
-    print(f"Body:\n{body}")

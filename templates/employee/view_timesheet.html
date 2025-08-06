@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}View Timesheet - Week {{ timesheet.week_start.strftime('%Y-%m-%d') }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Timesheet for Week Starting {{ timesheet.week_start.strftime('%Y-%m-%d') }}</h2>
+
+  <p><strong>Status:</strong> {{ timesheet.status|capitalize }}</p>
+  <p><strong>Submitted At:</strong> {{ timesheet.submitted_at.strftime('%Y-%m-%d %H:%M') if timesheet.submitted_at else '-' }}</p>
+  <p><strong>Manager Comments:</strong> {{ timesheet.manager_comments or '-' }}</p>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Clock In</th>
+        <th>Clock Out</th>
+        <th>Project</th>
+        <th>Description</th>
+        <th>Hours</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for day_data in entries %}
+        {% for entry in day_data.entries %}
+        <tr>
+          {% if loop.first %}
+          <td rowspan="{{ day_data.entries|length }}">{{ day_data.date.strftime('%Y-%m-%d') }}</td>
+          <td rowspan="{{ day_data.entries|length }}">{{ entry.clock_in.strftime('%H:%M') if entry.clock_in else '-' }}</td>
+          <td rowspan="{{ day_data.entries|length }}">{{ entry.clock_out.strftime('%H:%M') if entry.clock_out else '-' }}</td>
+          {% endif %}
+          <td>{{ entry.project }}</td>
+          <td>{{ entry.description or '-' }}</td>
+          <td>{{ entry.hours }}</td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+      <tr>
+        <td colspan="5" class="text-end"><strong>Total Hours</strong></td>
+        <td><strong>{{ total_hours }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('employee.timesheet_view') }}" class="btn btn-primary">Back to Timesheets</a>
+</div>
+{% endblock %}

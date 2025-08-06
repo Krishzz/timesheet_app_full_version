@@ -31,7 +31,7 @@
           </li>
         {% elif current_user.is_manager() %}
           <li class="nav-item mb-2">
-            <a class="nav-link text-white" href="{{ url_for('manager.pending_timesheets') }}">Pending Approvals</a>
+            <a class="nav-link text-white" href="{{ url_for('manager.manager_dashboard') }}">Pending Approvals</a>
           </li>
         {% elif current_user.is_admin() %}
           <li class="nav-item mb-2">

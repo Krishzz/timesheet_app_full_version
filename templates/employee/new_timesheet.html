@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 {% block title %}New Timesheet{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width: 400px;">
-  <h2>Create New Weekly Timesheet</h2>
-  <form method="POST" action="{{ url_for('employee.new_timesheet') }}">
+<div class="container mt-4">
+  <h2>Create New Timesheet</h2>
+  <form method="POST">
     <div class="mb-3">
-      <label for="week_start" class="form-label">Week Start (Monday)</label>
-      <input type="date" id="week_start" name="week_start" class="form-control" value="{{ default_week_start }}" required>
+      <label for="week_start" class="form-label">Select Week Start Date (Monday)</label>
+      <input type="date" id="week_start" name="week_start" value="{{ default_week_start.strftime('%Y-%m-%d') }}" required class="form-control" />
     </div>
     <button type="submit" class="btn btn-primary">Create Timesheet</button>
-    <a href="{{ url_for('employee.timesheet_view') }}" class="btn btn-secondary ms-2">Cancel</a>
+    <a href="{{ url_for('employee.timesheet_view') }}" class="btn btn-secondary">Cancel</a>
   </form>
 </div>
 {% endblock %}

@@ -22,6 +22,15 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def is_employee(self):
+        return self.role == 'employee'
+
+    def is_manager(self):
+        return self.role == 'manager'
+
+    def is_admin(self):
+        return self.role == 'admin'
+
 class Timesheet(db.Model):
     __tablename__ = "timesheets"
 
@@ -34,6 +43,9 @@ class Timesheet(db.Model):
     manager_comments = db.Column(db.Text, nullable=True)
 
     entries = db.relationship('TimesheetEntry', backref='timesheet', lazy=True, cascade='all, delete-orphan')
+
+    def total_hours(self):
+        return sum(entry.hours for entry in self.entries)
 
 class TimesheetEntry(db.Model):
     __tablename__ = "timesheet_entries"

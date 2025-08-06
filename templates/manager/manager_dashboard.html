@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Manager Dashboard</h2>
+  <p>Pending Timesheets for Approval: <strong>{{ pending_count }}</strong></p>
+
+  {% if pending_timesheets %}
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Week Start</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ts in pending_timesheets %}
+      <tr>
+        <td>{{ ts.user.username }}</td>
+        <td>{{ ts.week_start.strftime('%Y-%m-%d') }}</td>
+        <td>{{ ts.status }}</td>
+        <td>
+          <a href="{{ url_for('manager.view_timesheet', timesheet_id=ts.id) }}" class="btn btn-info btn-sm">View</a>
+          <form action="{{ url_for('manager.approve_timesheet', timesheet_id=ts.id) }}" method="POST" style="display:inline;">
+            <input type="hidden" name="manager_comments" value="Approved via dashboard" />
+            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this timesheet?')">Approve</button>
+          </form>
+          <form action="{{ url_for('manager.reject_timesheet', timesheet_id=ts.id) }}" method="POST" style="display:inline;">
+            <input type="hidden" name="manager_comments" value="Rejected via dashboard" />
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reject this timesheet?')">Reject</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No pending timesheets for approval.</p>
+  {% endif %}
+</div>
+{% endblock %}

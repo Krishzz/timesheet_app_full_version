@@ -1,56 +1,59 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask_login import login_required
 from extensions import db
-from models import Timesheet, User
+from models import Timesheet
+from utils import role_required
 
-manager_bp = Blueprint('manager', __name__)
+manager_bp = Blueprint('manager', __name__, template_folder='templates/manager')
 
-def manager_required(f):
-    from functools import wraps
-    from flask import abort
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_manager():
-            abort(403)
-        return f(*args, **kwargs)
-    return decorated_function
-
-@manager_bp.route('/timesheets/pending')
+@manager_bp.route('/dashboard')
 @login_required
-@manager_required
-def pending_timesheets():
-    # Show all submitted timesheets pending approval
-    timesheets = Timesheet.query.filter_by(status='submitted').order_by(Timesheet.date.desc()).all()
-    return render_template('manager/manager_timesheets.html', timesheets=timesheets)
+@role_required('manager')
+def manager_dashboard():
+    # Show dashboard with count and list of pending timesheets
+    pending_timesheets = Timesheet.query.filter_by(status='submitted').order_by(Timesheet.week_start.desc()).all()
+    pending_count = len(pending_timesheets)
+    return render_template('manager/manager_dashboard.html', 
+                           pending_count=pending_count, 
+                           pending_timesheets=pending_timesheets)
 
-@manager_bp.route('/timesheets/approve/<int:ts_id>', methods=['POST'])
+@manager_bp.route('/timesheets/view/<int:timesheet_id>')
 @login_required
-@manager_required
-def approve_timesheet(ts_id):
-    timesheet = Timesheet.query.get_or_404(ts_id)
+@role_required('manager')
+def view_timesheet(timesheet_id):
+    timesheet = Timesheet.query.get_or_404(timesheet_id)
+    if timesheet.status not in ['submitted', 'approved']:
+        flash('Timesheet is not in a viewable state.', 'warning')
+        return redirect(url_for('manager.manager_dashboard'))
+
+    # For simplicity, just pass timesheet.entries directly, or group as needed
+    entries = timesheet.entries  # Adjust if you want grouping in model
+    return render_template('manager/view_timesheet.html', timesheet=timesheet, entries=entries)
+
+@manager_bp.route('/timesheets/approve/<int:timesheet_id>', methods=['POST'])
+@login_required
+@role_required('manager')
+def approve_timesheet(timesheet_id):
+    timesheet = Timesheet.query.get_or_404(timesheet_id)
     if timesheet.status != 'submitted':
-        flash('Timesheet is not pending approval.', 'warning')
-        return redirect(url_for('manager.pending_timesheets'))
-
+        flash('Cannot approve timesheet that is not submitted.', 'warning')
+        return redirect(url_for('manager.manager_dashboard'))
     timesheet.status = 'approved'
+    timesheet.manager_comments = request.form.get('manager_comments', '')
     db.session.commit()
-    flash('Timesheet approved.', 'success')
-    # TODO: Send notification email here
-    return redirect(url_for('manager.pending_timesheets'))
+    flash('Timesheet approved successfully.', 'success')
+    return redirect(url_for('manager.manager_dashboard'))
 
-@manager_bp.route('/timesheets/reject/<int:ts_id>', methods=['POST'])
+@manager_bp.route('/timesheets/reject/<int:timesheet_id>', methods=['POST'])
 @login_required
-@manager_required
-def reject_timesheet(ts_id):
-    timesheet = Timesheet.query.get_or_404(ts_id)
+@role_required('manager')
+def reject_timesheet(timesheet_id):
+    timesheet = Timesheet.query.get_or_404(timesheet_id)
     if timesheet.status != 'submitted':
-        flash('Timesheet is not pending approval.', 'warning')
-        return redirect(url_for('manager.pending_timesheets'))
-
-    comment = request.form.get('manager_comment')
+        flash('Cannot reject timesheet that is not submitted.', 'warning')
+        return redirect(url_for('manager.manager_dashboard'))
     timesheet.status = 'rejected'
-    timesheet.manager_comment = comment
+    timesheet.manager_comments = request.form.get('manager_comments', '')
     db.session.commit()
-    flash('Timesheet rejected.', 'info')
-    # TODO: Send notification email here
-    return redirect(url_for('manager.pending_timesheets'))
+    flash('Timesheet rejected.', 'success')
+    return redirect(url_for('manager.manager_dashboard'))

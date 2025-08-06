@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}View Timesheet{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Timesheet Details for {{ timesheet.user.username }}</h2>
+  <p><strong>Week Start:</strong> {{ timesheet.week_start.strftime('%Y-%m-%d') }}</p>
+  <p><strong>Status:</strong> {{ timesheet.status }}</p>
+
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Project</th>
+        <th>Description</th>
+        <th>Hours</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr>
+        <td>{{ entry.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ entry.project }}</td>
+        <td>{{ entry.description }}</td>
+        <td>{{ entry.hours }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('manager.manager_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ employee_bp = Blueprint('employee', __name__, url_prefix='/employee')
 def get_monday(date_obj):
     return date_obj - timedelta(days=date_obj.weekday())
 
-@employee_bp.route('/timesheets', methods=['GET'])
+@employee_bp.route('/timesheets')
 @login_required
 def timesheet_view():
     timesheets = Timesheet.query.filter_by(user_id=current_user.id).order_by(Timesheet.week_start.desc()).all()
@@ -21,12 +21,12 @@ def new_timesheet():
     if request.method == 'POST':
         week_start_str = request.form.get('week_start')
         if not week_start_str:
-            flash('Week start date is required.', 'warning')
+            flash('Please select a week start date.', 'warning')
             return redirect(url_for('employee.new_timesheet'))
         try:
             week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
             week_start = get_monday(week_start)
-        except:
+        except ValueError:
             flash('Invalid date format.', 'warning')
             return redirect(url_for('employee.new_timesheet'))
 
@@ -35,14 +35,13 @@ def new_timesheet():
             flash('Timesheet for this week already exists. You can edit it.', 'info')
             return redirect(url_for('employee.edit_timesheet', ts_id=existing.id))
 
-        timesheet = Timesheet(user_id=current_user.id, week_start=week_start, status='draft')
-        db.session.add(timesheet)
+        new_ts = Timesheet(user_id=current_user.id, week_start=week_start, status='draft')
+        db.session.add(new_ts)
         db.session.commit()
-        return redirect(url_for('employee.edit_timesheet', ts_id=timesheet.id))
+        return redirect(url_for('employee.edit_timesheet', ts_id=new_ts.id))
 
-    today = datetime.today().date()
-    monday = get_monday(today)
-    return render_template('employee/new_timesheet.html', default_week_start=monday)
+    default_monday = get_monday(datetime.utcnow().date())
+    return render_template('employee/new_timesheet.html', default_week_start=default_monday)
 
 @employee_bp.route('/timesheets/edit/<int:ts_id>', methods=['GET', 'POST'])
 @login_required
@@ -51,16 +50,17 @@ def edit_timesheet(ts_id):
     if timesheet.user_id != current_user.id:
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('employee.timesheet_view'))
+
     if timesheet.status == 'approved':
         flash('Approved timesheets cannot be edited.', 'warning')
         return redirect(url_for('employee.timesheet_view'))
 
-    week_dates = [timesheet.week_start + timedelta(days=i) for i in range(7)]
+    week_dates = [timesheet.week_start + timedelta(days=i) for i in range(5)]
 
     if request.method == 'POST':
         action = request.form.get('action')  # 'save' or 'submit'
 
-        # Delete all existing entries for this timesheet before saving fresh data
+        # Remove existing entries to replace
         TimesheetEntry.query.filter_by(timesheet_id=timesheet.id).delete()
 
         for i, day_date in enumerate(week_dates):
@@ -76,8 +76,7 @@ def edit_timesheet(ts_id):
 
             for proj, desc, hrs in zip(projects, descriptions, hours_list):
                 if not proj.strip() or not hrs.strip():
-                    continue  # skip blank rows
-
+                    continue
                 entry = TimesheetEntry(
                     timesheet_id=timesheet.id,
                     date=day_date,
@@ -89,40 +88,53 @@ def edit_timesheet(ts_id):
                 )
                 db.session.add(entry)
 
-        if action == 'submit':
-            timesheet.status = 'submitted'
-            timesheet.submitted_at = datetime.utcnow()
-        else:
-            timesheet.status = 'draft'
-            timesheet.submitted_at = None
-
+        timesheet.status = 'submitted' if action == 'submit' else 'draft'
+        timesheet.submitted_at = datetime.utcnow() if action == 'submit' else None
         db.session.commit()
+
         flash(f'Timesheet {"submitted for approval" if action == "submit" else "saved as draft"}.', 'success')
         return redirect(url_for('employee.timesheet_view'))
 
+    # GET: show entries by date
     entries_by_date = []
     for day_date in week_dates:
         day_entries = TimesheetEntry.query.filter_by(timesheet_id=timesheet.id, date=day_date).all()
-        entries_by_date.append({
-            'date': day_date,
-            'entries': day_entries
-        })
+        entries_by_date.append({'date': day_date, 'entries': day_entries})
 
     return render_template('employee/edit_weekly_timesheet.html', timesheet=timesheet, entries=entries_by_date)
 
-@employee_bp.route('/timesheets/submit/<int:ts_id>', methods=['POST'])
+@employee_bp.route('/timesheets/delete/<int:ts_id>', methods=['POST'])
 @login_required
-def submit_timesheet(ts_id):
+def delete_timesheet(ts_id):
     timesheet = Timesheet.query.get_or_404(ts_id)
     if timesheet.user_id != current_user.id:
         flash('Unauthorized.', 'danger')
         return redirect(url_for('employee.timesheet_view'))
+
     if timesheet.status != 'draft':
-        flash('Only drafts can be submitted.', 'warning')
+        flash('Only draft timesheets can be deleted.', 'warning')
         return redirect(url_for('employee.timesheet_view'))
 
-    timesheet.status = 'submitted'
-    timesheet.submitted_at = datetime.utcnow()
+    db.session.delete(timesheet)
     db.session.commit()
-    flash('Timesheet submitted for approval.', 'success')
+    flash('Draft timesheet deleted.', 'success')
     return redirect(url_for('employee.timesheet_view'))
+
+@employee_bp.route('/timesheets/view/<int:ts_id>')
+@login_required
+def view_timesheet(ts_id):
+    timesheet = Timesheet.query.get_or_404(ts_id)
+    if timesheet.user_id != current_user.id:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('employee.timesheet_view'))
+
+    week_dates = [timesheet.week_start + timedelta(days=i) for i in range(7)]
+    entries_by_date = []
+    total_hours = 0
+    for day_date in week_dates:
+        day_entries = TimesheetEntry.query.filter_by(timesheet_id=timesheet.id, date=day_date).all()
+        entries_by_date.append({'date': day_date, 'entries': day_entries})
+        for e in day_entries:
+            total_hours += e.hours if e.hours else 0
+
+    return render_template('employee/view_timesheet.html', timesheet=timesheet, entries=entries_by_date, total_hours=total_hours)
