@@ -5,3 +5,4 @@ SQLAlchemy==2.0.19
 Werkzeug==2.3.7
 requests==2.31.0
 beautifulsoup4==4.12.2
+gunicorn
