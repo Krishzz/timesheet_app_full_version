@@ -20,8 +20,8 @@
 
   <!-- Sidebar -->
   <nav id="sidebar" class="sidebar d-flex flex-column bg-primary text-white">
-    <div class="sidebar-header p-3 text-center">
-      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Dew Software Logo" class="img-fluid" style="max-height: 60px;" />
+    <div class="sidebar-header p-3 text-center" style="background-color: #fff;">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Dew Software Logo" class="img-fluid" />
     </div>
     <ul class="nav flex-column px-2">
       {% if current_user.is_authenticated %}
@@ -34,8 +34,24 @@
             <a class="nav-link text-white" href="{{ url_for('manager.manager_dashboard') }}">Pending Approvals</a>
           </li>
         {% elif current_user.is_admin() %}
+          <!-- Admin Sidebar Section -->
           <li class="nav-item mb-2">
-            <a class="nav-link text-white" href="{{ url_for('admin.all_timesheets') }}">All Timesheets</a>
+            <a class="nav-link text-white" data-bs-toggle="collapse" href="#adminMenu" role="button" aria-expanded="false" aria-controls="adminMenu">
+              Admin Panel
+            </a>
+            <div class="collapse ps-3 show" id="adminMenu">
+              <ul class="nav flex-column">
+                <li class="nav-item mb-1">
+                  <a class="nav-link text-white" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+                </li>
+                <li class="nav-item mb-1">
+                  <a class="nav-link text-white" href="{{ url_for('admin.view_users') }}">Manage Users</a>
+                </li>
+                <li class="nav-item mb-1">
+                  <a class="nav-link text-white" href="{{ url_for('admin.view_timesheets') }}">Manage Timesheets</a>
+                </li>
+              </ul>
+            </div>
           </li>
         {% endif %}
         <li class="nav-item mt-auto">

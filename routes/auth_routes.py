@@ -15,7 +15,7 @@ def login():
         elif current_user.role == 'manager':
             return redirect(url_for('manager.manager_dashboard'))
         elif current_user.role == 'admin':
-            return redirect(url_for('admin.admin_dashboard'))
+            return redirect(url_for('admin.dashboard'))   # Fixed here
         else:
             return redirect(url_for('auth.login'))
 
@@ -37,7 +37,7 @@ def login():
             elif user.role == 'manager':
                 return redirect(url_for('manager.manager_dashboard'))
             elif user.role == 'admin':
-                return redirect(url_for('admin.admin_dashboard'))
+                return redirect(url_for('admin.dashboard'))  # Fixed here
             else:
                 return redirect(url_for('auth.login'))
         else:

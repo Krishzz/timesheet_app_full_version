@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Timesheet (Admin)</h2>
+<form method="POST">
+  {% for day in entries %}
+    {% set day_idx = loop.index0 %}
+    <h5>{{ day.date.strftime('%A, %d %B %Y') }}</h5>
+    <div class="form-group row">
+      <label class="col-sm-2 col-form-label">Clock In:</label>
+      <div class="col-sm-4">
+        <input type="time" class="form-control" name="clock_in_{{ day_idx }}" value="{{ day.entries[0].clock_in if day.entries and day.entries[0].clock_in }}">
+      </div>
+      <label class="col-sm-2 col-form-label">Clock Out:</label>
+      <div class="col-sm-4">
+        <input type="time" class="form-control" name="clock_out_{{ day_idx }}" value="{{ day.entries[0].clock_out if day.entries and day.entries[0].clock_out }}">
+      </div>
+    </div>
+
+    <table class="table table-bordered mt-2">
+      <thead>
+        <tr><th>Project</th><th>Description</th><th>Hours</th></tr>
+      </thead>
+      <tbody>
+        {% for entry in day.entries %}
+        <tr>
+          <td><input type="text" name="project_{{ day_idx }}[]" class="form-control" value="{{ entry.project }}"></td>
+          <td><input type="text" name="description_{{ day_idx }}[]" class="form-control" value="{{ entry.description }}"></td>
+          <td><input type="number" step="0.1" name="hours_{{ day_idx }}[]" class="form-control" value="{{ entry.hours }}"></td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td><input type="text" name="project_{{ day_idx }}[]" class="form-control" placeholder="New Project"></td>
+          <td><input type="text" name="description_{{ day_idx }}[]" class="form-control" placeholder="New Description"></td>
+          <td><input type="number" step="0.1" name="hours_{{ day_idx }}[]" class="form-control" placeholder="0.0"></td>
+        </tr>
+      </tbody>
+    </table>
+    <hr>
+  {% endfor %}
+
+  <div class="form-group">
+    <label>Status:</label>
+    <select name="status" class="form-control">
+      <option value="draft" {% if timesheet.status == 'draft' %}selected{% endif %}>Draft</option>
+      <option value="submitted" {% if timesheet.status == 'submitted' %}selected{% endif %}>Submitted</option>
+      <option value="approved" {% if timesheet.status == 'approved' %}selected{% endif %}>Approved</option>
+      <option value="rejected" {% if timesheet.status == 'rejected' %}selected{% endif %}>Rejected</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-success">Save Changes</button>
+  <a href="{{ url_for('admin.view_timesheets') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

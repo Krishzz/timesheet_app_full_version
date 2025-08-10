@@ -1,0 +1,35 @@
+
+<!-- templates/admin_timesheet_detail.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Timesheet #{{ timesheet.id }} for {{ timesheet.user.username }}</h2>
+
+<p><strong>Status:</strong> {{ timesheet.status }}</p>
+<p><strong>Week Start:</strong> {{ timesheet.week_start }}</p>
+<p><strong>Submitted:</strong> {{ timesheet.submitted_at or '-' }}</p>
+<p><strong>Approved:</strong> {{ timesheet.approved_at or '-' }}</p>
+
+<a href="{{ url_for('admin.edit_timesheet', ts_id=timesheet.id) }}" class="btn btn-warning">Edit</a>
+<a href="{{ url_for('admin.view_timesheets') }}" class="btn btn-secondary">Back</a>
+
+<h4 class="mt-4">Entries</h4>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Date</th><th>Clock In</th><th>Clock Out</th><th>Project</th><th>Description</th><th>Hours</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in timesheet.entries %}
+    <tr>
+      <td>{{ entry.date }}</td>
+      <td>{{ entry.clock_in or '-' }}</td>
+      <td>{{ entry.clock_out or '-' }}</td>
+      <td>{{ entry.project }}</td>
+      <td>{{ entry.description or '-' }}</td>
+      <td>{{ entry.hours }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -7,7 +7,7 @@
   <form method="POST">
     <div class="mb-3">
       <label for="week_start" class="form-label">Select Week Start Date (Monday)</label>
-      <input type="date" id="week_start" name="week_start" value="{{ default_week_start.strftime('%Y-%m-%d') }}" required class="form-control" />
+      <input type="date" id="week_start" name="week_start" value="{{ default_week_start.strftime('%Y-%m-%d') }}" required class="form-control" style="max-width: 150px;"/>
     </div>
     <button type="submit" class="btn btn-primary">Create Timesheet</button>
     <a href="{{ url_for('employee.timesheet_view') }}" class="btn btn-secondary">Cancel</a>

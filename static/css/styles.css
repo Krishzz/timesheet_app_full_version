@@ -15,7 +15,7 @@ body {
     top: 0;
     left: 0;
     background-color: #004085; /* Dew's primary dark blue */
-    color: #fff;
+    color: #ffffff;
     display: flex;
     flex-direction: column;
     z-index: 1030;
