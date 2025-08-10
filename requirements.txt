@@ -6,3 +6,5 @@ Werkzeug==2.3.7
 requests==2.31.0
 beautifulsoup4==4.12.2
 gunicorn
+psycopg2-binary
+
