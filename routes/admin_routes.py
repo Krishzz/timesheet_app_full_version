@@ -7,9 +7,10 @@ from calendar import monthrange
 from functools import wraps
 import io
 import csv
+from sqlalchemy.exc import SQLAlchemyError
+import logging
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
-
 
 def admin_required(f):
     @wraps(f)
@@ -62,10 +63,16 @@ def create_user():
 
         user = User(username=username, email=email, role=role, manager_id=manager_id)
         user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        flash("User created successfully.", "success")
-        return redirect(url_for("admin.view_users"))
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash("User created successfully.", "success")
+            return redirect(url_for("admin.view_users"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logging.error(f"DB Error on create_user: {str(e)}")
+            flash("Database error occurred while creating user.", "danger")
+            return redirect(url_for("admin.create_user"))
 
     managers = User.query.filter_by(role="manager").all()
     return render_template("admin/admin_user_form.html", action="create", managers=managers)
@@ -86,9 +93,15 @@ def edit_user(user_id):
         if new_password:
             user.set_password(new_password)
 
-        db.session.commit()
-        flash("User updated successfully.", "success")
-        return redirect(url_for("admin.view_users"))
+        try:
+            db.session.commit()
+            flash("User updated successfully.", "success")
+            return redirect(url_for("admin.view_users"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logging.error(f"DB Error on edit_user: {str(e)}")
+            flash("Database error occurred while updating user.", "danger")
+            return redirect(url_for("admin.edit_user", user_id=user_id))
 
     managers = User.query.filter_by(role="manager").all()
     return render_template("admin/admin_user_form.html", action="edit", user=user, managers=managers)
@@ -99,9 +112,14 @@ def edit_user(user_id):
 @admin_required
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    flash("User deleted.", "warning")
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash("User deleted.", "warning")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"DB Error on delete_user: {str(e)}")
+        flash("Database error occurred while deleting user.", "danger")
     return redirect(url_for("admin.view_users"))
 
 
@@ -219,8 +237,14 @@ def edit_timesheet(ts_id):
             timesheet.submitted_at = None
             timesheet.approved_at = None
 
-        db.session.commit()
-        flash(f'Timesheet updated and status changed to {new_status}.', 'success')
+        try:
+            db.session.commit()
+            flash(f'Timesheet updated and status changed to {new_status}.', 'success')
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logging.error(f"DB Error on edit_timesheet: {str(e)}")
+            flash('Database error occurred while updating timesheet.', 'danger')
+
         return redirect(url_for('admin.view_timesheets'))
 
     # GET: fetch entries grouped by day for form display
@@ -295,3 +319,24 @@ def export_timesheets():
         as_attachment=True,
         download_name='timesheets_export.csv'
     )
+
+
+@admin_bp.route('/timesheet/delete/<int:timesheet_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_timesheet(timesheet_id):
+    timesheet = Timesheet.query.get_or_404(timesheet_id)
+    
+    if timesheet.status != 'draft':
+        flash("Only draft timesheets can be deleted.", "warning")
+        return redirect(url_for('admin.view_timesheets'))
+    
+    try:
+        db.session.delete(timesheet)
+        db.session.commit()
+        flash(f"Timesheet #{timesheet.id} deleted successfully.", "success")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"DB Error on delete_timesheet: {str(e)}")
+        flash("Database error occurred while deleting timesheet.", "danger")
+    return redirect(url_for('admin.view_timesheets'))

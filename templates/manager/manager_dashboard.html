@@ -4,7 +4,8 @@
 {% block content %}
 <div class="container mt-4">
   <h2>Manager Dashboard</h2>
-  <p>Pending Timesheets for Approval: <strong>{{ pending_count }}</strong></p>
+
+  <h4>Pending Timesheets for Approval: <strong>{{ pending_timesheets|length }}</strong></h4>
 
   {% if pending_timesheets %}
   <table class="table table-bordered table-striped">
@@ -12,6 +13,8 @@
       <tr>
         <th>Employee</th>
         <th>Week Start</th>
+        <th>Total Hours</th>
+        <th>Submitted At</th>
         <th>Status</th>
         <th>Actions</th>
       </tr>
@@ -21,17 +24,41 @@
       <tr>
         <td>{{ ts.user.username }}</td>
         <td>{{ ts.week_start.strftime('%Y-%m-%d') }}</td>
+        <td>{{ '%.2f' % ts.total_hours() }}</td>
+        <td>{{ ts.submitted_at.strftime('%Y-%m-%d %H:%M') if ts.submitted_at else '-' }}</td>
         <td>{{ ts.status }}</td>
         <td>
           <a href="{{ url_for('manager.view_timesheet', timesheet_id=ts.id) }}" class="btn btn-info btn-sm">View</a>
+
           <form action="{{ url_for('manager.approve_timesheet', timesheet_id=ts.id) }}" method="POST" style="display:inline;">
             <input type="hidden" name="manager_comments" value="Approved via dashboard" />
             <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this timesheet?')">Approve</button>
           </form>
-          <form action="{{ url_for('manager.reject_timesheet', timesheet_id=ts.id) }}" method="POST" style="display:inline;">
-            <input type="hidden" name="manager_comments" value="Rejected via dashboard" />
-            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reject this timesheet?')">Reject</button>
-          </form>
+
+          <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ ts.id }}">
+            Reject
+          </button>
+
+          <div class="modal fade" id="rejectModal{{ ts.id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ ts.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <form action="{{ url_for('manager.reject_timesheet', timesheet_id=ts.id) }}" method="POST" class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="rejectModalLabel{{ ts.id }}">Reject Timesheet for {{ ts.user.username }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label for="manager_comments_{{ ts.id }}" class="form-label">Rejection Comment</label>
+                    <textarea class="form-control" id="manager_comments_{{ ts.id }}" name="manager_comments" rows="3" required></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-danger">Reject Timesheet</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </td>
       </tr>
       {% endfor %}
@@ -40,5 +67,79 @@
   {% else %}
   <p>No pending timesheets for approval.</p>
   {% endif %}
+
+  <hr />
+
+  <h4>Timesheets History</h4>
+
+  <!-- Filter Form -->
+  <form method="get" class="row g-3 mb-3 align-items-end">
+    <div class="col-auto">
+      <label for="status" class="form-label">Status</label>
+      <select id="status" name="status" class="form-select">
+        <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <label for="start_date" class="form-label">Start Date</label>
+      <input type="date" id="start_date" name="start_date" class="form-control"
+             value="{{ start_date }}">
+    </div>
+    <div class="col-auto">
+      <label for="end_date" class="form-label">End Date</label>
+      <input type="date" id="end_date" name="end_date" class="form-control"
+             value="{{ end_date }}" max="{{ end_date }}">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{{ url_for('manager.manager_dashboard') }}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+
+  <a href="{{ url_for('manager.export_manager_history', status=status_filter, start_date=start_date, end_date=end_date) }}" class="btn btn-info mb-3">Export CSV</a>
+
+  {% if history_timesheets %}
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Week Start</th>
+        <th>Total Hours</th>
+        <th>Submitted At</th>
+        <th>Status</th>
+        <th>Manager Comments</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ts in history_timesheets %}
+      <tr>
+        <td>{{ ts.user.username }}</td>
+        <td>{{ ts.week_start.strftime('%Y-%m-%d') }}</td>
+        <td>{{ '%.2f' % ts.total_hours() }}</td>
+        <td>{{ ts.submitted_at.strftime('%Y-%m-%d %H:%M') if ts.submitted_at else '-' }}</td>
+        <td>
+          {% if ts.status == 'approved' %}
+            <span class="badge bg-success">Approved</span>
+          {% elif ts.status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+          {% else %}
+            {{ ts.status }}
+          {% endif %}
+        </td>
+        <td>{{ ts.manager_comments or '-' }}</td>
+        <td>
+          <a href="{{ url_for('manager.view_timesheet', timesheet_id=ts.id) }}" class="btn btn-info btn-sm">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No timesheets found for the selected filters.</p>
+  {% endif %}
+
 </div>
 {% endblock %}

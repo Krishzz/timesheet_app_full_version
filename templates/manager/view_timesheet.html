@@ -7,26 +7,44 @@
   <p><strong>Week Start:</strong> {{ timesheet.week_start.strftime('%Y-%m-%d') }}</p>
   <p><strong>Status:</strong> {{ timesheet.status }}</p>
 
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Project</th>
-        <th>Description</th>
-        <th>Hours</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for entry in entries %}
-      <tr>
-        <td>{{ entry.date.strftime('%Y-%m-%d') }}</td>
-        <td>{{ entry.project }}</td>
-        <td>{{ entry.description }}</td>
-        <td>{{ entry.hours }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% for date in sorted_dates %}
+    <div class="mb-4">
+      <h5>{{ date }}</h5>
+      <table class="table table-bordered table-striped mb-2">
+        <thead>
+          <tr>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Project</th>
+            <th>Description</th>
+            <th>Hours</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set entries = grouped_entries[date] %}
+          {% for entry in entries %}
+          <tr>
+            {% if loop.first %}
+              <td rowspan="{{ entries|length }}">
+                {{ daily_clock_times[date].clock_in.strftime('%H:%M') if daily_clock_times[date].clock_in else '-' }}
+              </td>
+              <td rowspan="{{ entries|length }}">
+                {{ daily_clock_times[date].clock_out.strftime('%H:%M') if daily_clock_times[date].clock_out else '-' }}
+              </td>
+            {% endif %}
+            <td>{{ entry.project }}</td>
+            <td>{{ entry.description }}</td>
+            <td>{{ "%.2f"|format(entry.hours) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p><strong>Total hours for {{ date }}: {{ "%.2f"|format(daily_totals[date]) }}</strong></p>
+    </div>
+  {% endfor %}
+
+  <h4>Total hours for week: {{ "%.2f"|format(grand_total) }}</h4>
 
   <a href="{{ url_for('manager.manager_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
 </div>

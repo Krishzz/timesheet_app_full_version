@@ -5,75 +5,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Timesheet App{% endblock %}</title>
 
-  <!-- Favicon -->
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon" />
-
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Raleway", Sans-serif;
+    }
+
+    /* Remove background from body to avoid Safari fixed background issues */
+    body {
+      background: none;
+      display: flex;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Background image fixed div */
+    #background-image {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url("{{ url_for('static', filename='img/landing_page.png') }}") no-repeat center center;
+      background-size: cover;
+      z-index: -3;
+    }
+
+    /* Semi-transparent overlay fixed div */
+    #background-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: -2;
+    }
+
+    /* Sidebar styling */
+    #sidebar {
+      width: 250px;
+      height: 100vh;
+      backdrop-filter: blur(8px);
+      background-color: rgba(0, 51, 102, 0.85) !important;
+      padding-top: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #sidebar .sidebar-header {
+      background-color: #fff;
+      padding: 1rem;
+    }
+    #sidebar .sidebar-header img {
+      max-height: 100px;
+    }
+    #sidebar .nav-link {
+      color: #fff;
+      font-weight: 500;
+      transition: background 0.3s, color 0.3s;
+    }
+    #sidebar .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: #ffd700;
+    }
+
+    /* Main content */
+    main#content {
+      flex-grow: 1;
+      margin-left: 250px; /* Prevents content from going under sidebar */
+      padding: 20px;
+      color: #fff;
+      min-height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .alert {
+      opacity: 0.95;
+    }
+  </style>
 
   {% block head %}{% endblock %}
 </head>
 <body>
 
+  <!-- Background layers -->
+  <div id="background-image"></div>
+  <div id="background-overlay"></div>
+
   <!-- Sidebar -->
-  <nav id="sidebar" class="sidebar d-flex flex-column bg-primary text-white">
-    <div class="sidebar-header p-3 text-center" style="background-color: #fff;">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Dew Software Logo" class="img-fluid" />
+  <nav id="sidebar" class="sidebar text-white">
+    <div class="sidebar-header text-center">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="img-fluid" style="max-width: fit-content;"/>
     </div>
-    <ul class="nav flex-column px-2">
+    <ul class="nav flex-column px-3">
       {% if current_user.is_authenticated %}
+        <li class="nav-item mt-3 px-3">
+          <div class="text-white fst-italic small">
+            Welcome, <strong>{{ current_user.username }}</strong>!
+          </div>
+        </li>
+
         {% if current_user.is_employee() %}
-          <li class="nav-item mb-2">
-            <a class="nav-link text-white" href="{{ url_for('employee.timesheet_view') }}">My Timesheets</a>
+          <li class="nav-item mt-3 mb-2">
+            <a class="nav-link" href="{{ url_for('employee.timesheet_view') }}">My Timesheets</a>
           </li>
         {% elif current_user.is_manager() %}
           <li class="nav-item mb-2">
-            <a class="nav-link text-white" href="{{ url_for('manager.manager_dashboard') }}">Pending Approvals</a>
+            <a class="nav-link" href="{{ url_for('manager.manager_dashboard') }}">Pending Approvals</a>
           </li>
         {% elif current_user.is_admin() %}
-          <!-- Admin Sidebar Section -->
           <li class="nav-item mb-2">
-            <a class="nav-link text-white" data-bs-toggle="collapse" href="#adminMenu" role="button" aria-expanded="false" aria-controls="adminMenu">
+            <a class="nav-link" data-bs-toggle="collapse" href="#adminMenu" role="button" aria-expanded="true" aria-controls="adminMenu">
               Admin Panel
             </a>
             <div class="collapse ps-3 show" id="adminMenu">
               <ul class="nav flex-column">
-                <li class="nav-item mb-1">
-                  <a class="nav-link text-white" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-                </li>
-                <li class="nav-item mb-1">
-                  <a class="nav-link text-white" href="{{ url_for('admin.view_users') }}">Manage Users</a>
-                </li>
-                <li class="nav-item mb-1">
-                  <a class="nav-link text-white" href="{{ url_for('admin.view_timesheets') }}">Manage Timesheets</a>
-                </li>
+                <li class="nav-item mb-1"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                <li class="nav-item mb-1"><a class="nav-link" href="{{ url_for('admin.view_users') }}">Manage Users</a></li>
+                <li class="nav-item mb-1"><a class="nav-link" href="{{ url_for('admin.view_timesheets') }}">Manage Timesheets</a></li>
               </ul>
             </div>
           </li>
         {% endif %}
+
         <li class="nav-item mt-auto">
-          <a class="nav-link text-white" href="{{ url_for('auth.logout') }}">Logout</a>
+          <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
         </li>
       {% else %}
         <li class="nav-item">
-          <a class="nav-link text-white" href="{{ url_for('auth.login') }}">Login</a>
+          <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
         </li>
       {% endif %}
     </ul>
   </nav>
 
   <!-- Main Content -->
-  <main id="content" class="container-fluid">
+  <main id="content">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="container mt-3">
           {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
               {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           {% endfor %}
         </div>
@@ -83,13 +166,8 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Bootstrap JS (Popper + Bootstrap) -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
-  <!-- Custom JS -->
-  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-
   {% block scripts %}{% endblock %}
 </body>
 </html>

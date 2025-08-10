@@ -1,4 +1,4 @@
-from constants import SECRET_KEY, DATABASE_URI, MAIL_SETTINGS
+from constants import SECRET_KEY, DATABASE_URI
 
 class Config:
     SECRET_KEY = SECRET_KEY

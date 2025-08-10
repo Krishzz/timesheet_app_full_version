@@ -6,6 +6,48 @@
   <h2>My Timesheets</h2>
   <a href="{{ url_for('employee.new_timesheet') }}" class="btn btn-primary mb-3">Add New Timesheet</a>
 
+  <!-- Filter Form -->
+  <form method="get" class="row g-3 mb-3 align-items-end">
+    <div class="col-auto">
+      <label for="status" class="form-label">Status</label>
+      <select id="status" name="status" class="form-select">
+        <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <label for="start_date" class="form-label">Start Date</label>
+      <input
+        type="date"
+        id="start_date"
+        name="start_date"
+        class="form-control"
+        value="{{ start_date }}"
+        max="{{ max_date }}"
+      >
+    </div>
+    <div class="col-auto">
+      <label for="end_date" class="form-label">End Date</label>
+      <input
+        type="date"
+        id="end_date"
+        name="end_date"
+        class="form-control"
+        value="{{ end_date }}"
+        max="{{ end_date }}"
+      >
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{{ url_for('employee.timesheet_view') }}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+
+  <a href="{{ url_for('employee.export_timesheets', status=status_filter, start_date=start_date, end_date=end_date) }}" class="btn btn-info mb-3">Export CSV</a>
+
   {% if timesheets %}
   <table class="table table-striped">
     <thead>
@@ -21,7 +63,11 @@
     <tbody>
       {% for ts in timesheets %}
       <tr>
-        <td><a href="{{ url_for('employee.view_timesheet', ts_id=ts.id) }}">{{ ts.week_start.strftime('%Y-%m-%d') }}</a></td>
+        <td>
+          <a href="{{ url_for('employee.view_timesheet', ts_id=ts.id) }}">
+            {{ ts.week_start.strftime('%Y-%m-%d') }}
+          </a>
+        </td>
         <td>
           {% if ts.status == 'draft' %}
             <span class="badge bg-secondary">Draft</span>
@@ -35,21 +81,19 @@
             <span class="badge bg-warning">Unknown</span>
           {% endif %}
         </td>
-        <td>
-          {{ ts.entries | sum(attribute='hours') }}
-        </td>
+        <td>{{ ts.entries | sum(attribute='hours') }}</td>
         <td>{{ ts.submitted_at.strftime('%Y-%m-%d %H:%M') if ts.submitted_at else '-' }}</td>
         <td>{{ ts.manager_comments or '-' }}</td>
         <td>
-          {% if ts.status == 'draft' %}
-          <a href="{{ url_for('employee.edit_timesheet', ts_id=ts.id) }}" class="btn btn-sm btn-warning">Edit</a>
-          <form action="{{ url_for('employee.delete_timesheet', ts_id=ts.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this draft timesheet?');">
-            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-          </form>
+          {% if ts.status == 'draft' or ts.status == 'rejected' %}
+            <a href="{{ url_for('employee.edit_timesheet', ts_id=ts.id) }}" class="btn btn-sm btn-warning">Edit</a>
+            <form action="{{ url_for('employee.delete_timesheet', ts_id=ts.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this draft timesheet?');">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
           {% elif ts.status != 'approved' %}
-          <a href="{{ url_for('employee.view_timesheet', ts_id=ts.id) }}" class="btn btn-sm btn-info">View</a>
+            <a href="{{ url_for('employee.view_timesheet', ts_id=ts.id) }}" class="btn btn-sm btn-info">View</a>
           {% else %}
-          <span class="text-success">Approved</span>
+            <span class="text-success">Approved</span>
           {% endif %}
         </td>
       </tr>

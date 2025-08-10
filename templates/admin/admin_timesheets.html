@@ -42,12 +42,37 @@
     <tr>
       <td>{{ ts.id }}</td>
       <td>{{ ts.user.username }}</td>
-      <td>{{ ts.week_start }}</td>
-      <td>{{ ts.status }}</td>
-      <td>{{ ts.submitted_at or '-' }}</td>
-      <td>{{ ts.approved_at or '-' }}</td>
+      <td>{{ ts.week_start.strftime('%d %b, %Y') }}</td>
+      <td>{{ ts.status.capitalize() }}</td>
+      <td>{{ ts.submitted_at.strftime('%d %b, %Y %H:%M') if ts.submitted_at else '-' }}</td>
+      <td>{{ ts.approved_at.strftime('%d %b, %Y %H:%M') if ts.approved_at else '-' }}</td>
       <td>
         <a href="{{ url_for('admin.view_timesheet_detail', timesheet_id=ts.id) }}" class="btn btn-sm btn-primary">View</a>
+        {% if ts.status == 'draft' %}
+        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ ts.id }}">Delete</button>
+        {% endif %}
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal{{ ts.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ ts.id }}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ ts.id }}">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to delete Timesheet #{{ ts.id }} for user {{ ts.user.username }}?
+              </div>
+              <div class="modal-footer">
+                <form method="POST" action="{{ url_for('admin.delete_timesheet', timesheet_id=ts.id) }}">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </td>
     </tr>
     {% else %}
